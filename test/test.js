@@ -1,5 +1,6 @@
 var express = require('express');
 var bodyParser = require('body-parser');
+var morgan = require('morgan');
 var mongoskin = require('mongoskin');
 var api = require('../index.js');
 var Q = require('q');
@@ -23,6 +24,7 @@ describe('with express-mongo rest api I can', function() {
     });
 
     app = express();
+    app.use(morgan('dev'));
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({extended: true}));
 
