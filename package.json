@@ -27,6 +27,6 @@
     "superagent": "^0.20.0"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "gulp"
   }
 }
