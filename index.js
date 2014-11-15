@@ -1,6 +1,7 @@
+var express = require('express');
 var mongoskin = require('mongoskin');
 
-module.exports = function(app, options) {
+module.exports = function(options) {
   var db = options.db;
   if (!db) throw new Error("options.db connection is not specified");
 
@@ -9,8 +10,10 @@ module.exports = function(app, options) {
   var dbname = dburl[dburl.length - 1];
   var prefix = options.prefix || '/' + dbname;
 
+  var router = express.Router();
+
   // list of document collections
-  app.get(prefix, function(req, res, next) {
+  router.get(prefix, function(req, res, next) {
     db.collections(function(err, collections) {
       if (err) return next(err);
       var arr = collections
@@ -25,7 +28,7 @@ module.exports = function(app, options) {
   };
 
   // collection handlers
-  app.route(prefix + '/:collection')
+  router.route(prefix + '/:collection')
     .get(function(req, res, next) {
       var query = req.query.query || {};
       if (typeof query == "string") {
@@ -58,7 +61,7 @@ module.exports = function(app, options) {
       });
     });
 
-  app.get(prefix + '/:collection/count', function(req, res, next) {
+  router.get(prefix + '/:collection/count', function(req, res, next) {
     collection(req).count(function(err, result) {
       if (err) return next(err);
       res.send({count: result});
@@ -66,7 +69,7 @@ module.exports = function(app, options) {
   });
 
   // document handlers
-  app.route(prefix + '/:collection/:id')
+  router.route(prefix + '/:collection/:id')
     .get(function(req, res, next) {
       var id = req.params.id;
       collection(req).findById(id, function(err, result) {
@@ -88,4 +91,6 @@ module.exports = function(app, options) {
         res.send({count: result});
       });
     });
+
+  return router;
 };

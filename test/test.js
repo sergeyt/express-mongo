@@ -27,8 +27,7 @@ describe('with express-mongo rest api I can', function() {
     app.use(morgan('dev'));
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({extended: true}));
-
-    api(app, {db: db});
+    app.use(api({db: db}));
 
     app.listen(port);
   });
