@@ -22,6 +22,5 @@ app.use(bodyParser.urlencoded({extended: true}));
 // register RESTful API in your express application
 api(app, {db: db});
 
-
 app.listen(8080);
 ```

@@ -1,6 +1,6 @@
 {
   "name": "express-mongo",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "RESTful API to mongodb documents for expressjs applications",
   "main": "index.js",
   "repository": {
