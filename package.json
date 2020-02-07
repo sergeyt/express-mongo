@@ -8,26 +8,23 @@
     "url": "https://github.com/sergeyt/express-mongo"
   },
   "author": "Sergey Todyshev <stodyshev@gmail.com>",
-  "contributors": [
-    "Sergey Todyshev <stodyshev@gmail.com>"
-  ],
   "license": "MIT",
   "dependencies": {
-    "express": "^4.10.1",
-    "mongoskin": "^1.4.4"
+    "express": "^4.17.1",
+    "mongoskin": "https://github.com/ar2rsawseen/node-mongoskin.git",
+    "mongodb": "^3.5.2"
   },
   "devDependencies": {
-    "body-parser": "^1.9.2",
-    "gulp": "^3.8.10",
-    "gulp-jshint": "^1.9.0",
-    "gulp-mocha": "^1.1.1",
-    "mocha": "^2.0.1",
-    "morgan": "^1.5.0",
-    "q": "^1.1.1",
-    "should": "^4.3.0",
-    "superagent": "^0.20.0"
+    "body-parser": "^1.19.0",
+    "eslint": "^6.8.0",
+    "jest": "^25.1.0",
+    "morgan": "^1.9.1",
+    "q": "^1.5.1",
+    "should": "^13.2.3",
+    "superagent": "^5.2.1"
   },
   "scripts": {
-    "test": "gulp"
+    "lint": "eslint index.js",
+    "test": "jest test/test.js"
   }
 }

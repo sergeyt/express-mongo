@@ -1,34 +1,37 @@
-var express = require('express');
-var mongoskin = require('mongoskin');
+var express = require("express");
+// var mongoskin = require("mongoskin");
 
 module.exports = function(options) {
-  var db = options.db;
-  if (!db) throw new Error("options.db connection is not specified");
-
-  // last arg is database name
-  var dburl = db._connect_args[0].split('/');
-  var dbname = dburl[dburl.length - 1];
-  var prefix = options.prefix || '/' + dbname;
-
+  var prefix = options.prefix || "/api";
   var router = express.Router();
 
+  function db(req) {
+    // TODO wrap native db if not wrapped
+    return req.db || options.db;
+  }
+
   // list of document collections
-  router.get(prefix, function(req, res, next) {
-    db.collections(function(err, collections) {
+  router.get(prefix + "/_collections", function(req, res, next) {
+    db(req).collections(function(err, collections) {
       if (err) return next(err);
       var arr = collections
-        .filter(function(c) { return c.db && c.db.databaseName == dbname; })
-        .map(function(c) { return c.collectionName; });
+        // .filter(function(c) {
+        //   return c.db && c.db.databaseName == dbname;
+        // })
+        .map(function(c) {
+          return c.collectionName;
+        });
       res.send(arr);
     });
   });
 
   var collection = function(req) {
-    return db.collection(req.params.collection);
+    return db(req).collection(req.params.collection);
   };
 
   // collection handlers
-  router.route(prefix + '/:collection')
+  router
+    .route(prefix + "/:collection")
     .get(function(req, res, next) {
       var query = req.query.query || {};
       if (typeof query == "string") {
@@ -36,10 +39,12 @@ module.exports = function(options) {
       }
       var limit = req.query.limit || 1000;
       // TODO sort from req.query
-      collection(req).find(query ,{limit: limit, sort: {'_id': -1}}).toArray(function(err, docs) {
-        if (err) return next(err);
-        res.send(docs);
-      });
+      collection(req)
+        .find(query, { limit: limit, sort: { _id: -1 } })
+        .toArray(function(err, docs) {
+          if (err) return next(err);
+          res.send(docs);
+        });
     })
     .post(function(req, res, next) {
       collection(req).insert(req.body, {}, function(err, result) {
@@ -57,19 +62,20 @@ module.exports = function(options) {
       }
       collection(req).remove(query, function(err, result) {
         if (err) return next(err);
-        res.send({count: result});
+        res.send({ count: result });
       });
     });
 
-  router.get(prefix + '/:collection/count', function(req, res, next) {
+  router.get(prefix + "/:collection/count", function(req, res, next) {
     collection(req).count(function(err, result) {
       if (err) return next(err);
-      res.send({count: result});
+      res.send({ count: result });
     });
   });
 
   // document handlers
-  router.route(prefix + '/:collection/:id')
+  router
+    .route(prefix + "/:collection/:id")
     .get(function(req, res, next) {
       var id = req.params.id;
       collection(req).findById(id, function(err, result) {
@@ -79,16 +85,21 @@ module.exports = function(options) {
     })
     .put(function(req, res, next) {
       var id = req.params.id;
-      collection(req).updateById(id, {$set: req.body}, {safe: true, multi: false}, function(err, result) {
-        if (err) return next(err);
-        res.send({_id: id});
-      });
+      collection(req).updateById(
+        id,
+        { $set: req.body },
+        { safe: true, multi: false },
+        function(err) {
+          if (err) return next(err);
+          res.send({ _id: id });
+        }
+      );
     })
     .delete(function(req, res, next) {
       var id = req.params.id;
       collection(req).removeById(id, function(err, result) {
         if (err) return next(err);
-        res.send({count: result});
+        res.send({ count: result });
       });
     });
 

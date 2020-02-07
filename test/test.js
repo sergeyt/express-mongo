@@ -1,46 +1,43 @@
-var express = require('express');
-var bodyParser = require('body-parser');
-var morgan = require('morgan');
-var mongoskin = require('mongoskin');
-var api = require('../index.js');
-var Q = require('q');
-var should = require('should');
+var express = require("express");
+var bodyParser = require("body-parser");
+var morgan = require("morgan");
+var mongoskin = require("mongoskin");
+var api = require("../index.js");
+var Q = require("q");
+var should = require("should");
 // TODO try supertest
-var http = require('superagent');
+var http = require("superagent");
 
 var port = 9876;
-var endpoint = 'http://localhost:' + port + '/test/';
-var collectionName = 'testusers';
+var endpoint = "http://localhost:" + port + "/api/";
+var collectionName = "testusers";
 
-describe('with express-mongo rest api I can', function() {
-  var app;
-
-
-  before(function() {
-    var db = mongoskin.db('mongodb://@localhost:27017/test', {safe:true});
+describe("with express-mongo rest api I can", function() {
+  beforeAll(function() {
+    var db = mongoskin.db("mongodb://root:root@localhost:27017/test");
 
     // clean test collection
-    db.collection(collectionName).remove({}, function(err, res) {
-    });
+    db.collection(collectionName).remove({}, function(err, res) {});
 
-    app = express();
-    app.use(morgan('dev'));
+    var app = express();
+    app.use(function(req, res, next) {
+      req.db = db;
+      next();
+    });
+    app.use(morgan("dev"));
     app.use(bodyParser.json());
-    app.use(bodyParser.urlencoded({extended: true}));
-    app.use(api({db: db}));
+    app.use(bodyParser.urlencoded({ extended: true }));
+    app.use(api({ db: db }));
 
     app.listen(port);
   });
 
-  after(function() {
-    // TODO it seems no need to stop app
-  });
-
-  it('easily do CRUD operations', function(done) {
+  it("easily do CRUD operations", function(done) {
     var users = collection(collectionName);
-    var user = {name: 'bob'};
+    var user = { name: "bob" };
 
-    users.add(user)
+    users
+      .add(user)
       .then(function(docs) {
         docs.length.should.eql(1);
         docs[0]._id.length.should.eql(24);
@@ -50,16 +47,18 @@ describe('with express-mongo rest api I can', function() {
         var id = doc._id;
         delete doc._id;
         doc.should.eql(user);
-        return promisify(http.get(endpoint)).then(function(list) {
-          list.should.containEql(collectionName);
-          return users.find({name: 'bob'});
-        }).then(function(docs) {
-          docs.length.should.eql(1);
-          return id;
-        });
+        return promisify(http.get(endpoint))
+          .then(function(list) {
+            list.should.containEql(collectionName);
+            return users.find({ name: "bob" });
+          })
+          .then(function(docs) {
+            docs.length.should.eql(1);
+            return id;
+          });
       })
       .then(function(id) {
-        user.name = 'rob';
+        user.name = "rob";
         return users.put(id, user);
       })
       .then(function(res) {
@@ -71,26 +70,28 @@ describe('with express-mongo rest api I can', function() {
       })
       .then(function(docs) {
         docs.length.should.eql(0);
-        return users.add([{name: 'bob'}, {name: 'rob'}]);
+        return users.add([{ name: "bob" }, { name: "rob" }]);
       })
       .then(function(docs) {
         docs.length.should.eql(2);
-        return users.del({name: 'rob'});
+        return users.del({ name: "rob" });
       })
       .then(function(res) {
         res.count.should.eql(1);
         return users.find();
       })
       .then(function(docs) {
-        docs.forEach(function(d) { delete d._id; });
-        docs.should.eql([{name: 'bob'}]);
+        docs.forEach(function(d) {
+          delete d._id;
+        });
+        docs.should.eql([{ name: "bob" }]);
         return docs;
       })
       .catch(function(err) {
-        should.fail(err);
         done();
+        should.fail(err);
       })
-      .done(function(){
+      .done(function() {
         done();
       });
   });
@@ -104,7 +105,7 @@ function collection(name) {
     find: function(query) {
       var req = http.get(url);
       if (query && Object.keys(query).length > 0) {
-        req = req.query({query: query});
+        req = req.query({ query: query });
       }
       return promisify(req);
     },
@@ -112,16 +113,16 @@ function collection(name) {
       return promisify(http.post(url).send(obj));
     },
     get: function(id) {
-      return promisify(http.get(url + '/' + id));
+      return promisify(http.get(url + "/" + id));
     },
     put: function(id, obj) {
-      return promisify(http.put(url + '/' + id).send(obj));
+      return promisify(http.put(url + "/" + id).send(obj));
     },
     del: function(id) {
       if (typeof id == "object") {
-        return promisify(http.del(url).send({query: id}));
+        return promisify(http.del(url).send({ query: id }));
       }
-      return promisify(http.del(url + '/' + id));
+      return promisify(http.del(url + "/" + id));
     }
   };
 }
